@@ -1,4 +1,4 @@
-# SimpleStatistics
+# ANOVA test to determine if there are significant differences between groups defined by a categorical variable.
 
             This app is for researchers or analysts interested in understanding how ratings vary across different categories and identifying specific variables that show significant differences.
                  The summary table provides a quick overview of significant findings, aiding in decision-making and further investigation.
