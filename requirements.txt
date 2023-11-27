@@ -1,9 +1,9 @@
 boto==2.49.0
 numpy==1.23.5
 pandas==1.4.4
-pyreadstat==1.1.9
-scipy==1.11.4
+pyreadstat
+scipy
 semopy==2.3.9
-statsmodels==0.13.2
-streamlit==1.28.1
+statsmodels
+streamlit
 scikit-learn
