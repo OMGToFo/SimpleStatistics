@@ -12,7 +12,7 @@ infoExpander = st.expander("Info about the app")
 with infoExpander:
     st.markdown("""
 
-             This app is valuable for researchers or analysts interested in understanding how ratings vary across different categories and identifying specific variables that show significant differences.
+             This app is for researchers or analysts interested in understanding how ratings vary across different categories and identifying specific variables that show significant differences.
                  The summary table provides a quick overview of significant findings, aiding in decision-making and further investigation.
 
               Here's more about its functionality:
