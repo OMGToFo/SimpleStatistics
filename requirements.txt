@@ -7,3 +7,7 @@ semopy==2.3.9
 statsmodels
 streamlit
 scikit-learn
+pyxlsb
+xlrd
+openpyxl
+xlsxwriter
