@@ -7,7 +7,7 @@
 
  - User Input:
 
-The user can select a categorical variable (ordinal/categorical nonmetric) from the available columns in the dataset.
+The user can select one or more categorical variables (ordinal/categorical nonmetric) from the available columns in the dataset.
 The user can choose one or more numeric variables for analysis.
 - Data Filtering:
 
