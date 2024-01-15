@@ -530,7 +530,7 @@ if option =="Heatmap":
 			st.dataframe(cases_table)
 
 
-		st.info("Table wit mean values in the cells")
+		st.info("Table with mean values in the cells")
 		st.dataframe(crosstab)
 
 		# Display heatmap using matplotlib and seaborn
