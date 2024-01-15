@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 
 from statsmodels.stats.proportion import proportions_ztest, proportion_confint
 
+st.set_option('deprecation.showPyplotGlobalUse', False)
 
 #Anova
 from scipy.stats import f_oneway
