@@ -529,7 +529,9 @@ if option =="Heatmap":
 			cases_table = pd.crosstab(df[categorical_var1], df[categorical_var2])
 			st.dataframe(cases_table)
 
-		# st.dataframe(crosstab)
+
+		st.info("Table wit mean values in the cells")
+		st.dataframe(crosstab)
 
 		# Display heatmap using matplotlib and seaborn
 		st.write("")
