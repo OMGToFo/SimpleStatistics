@@ -19,9 +19,12 @@ from statsmodels.stats.multicomp import pairwise_tukeyhsd
 import seaborn as sns
 from scipy.stats import f_oneway
 
-
-
 from streamlit_option_menu import option_menu
+
+# für Excel-Export-Funktionen
+from io import BytesIO
+from pyxlsb import open_workbook as open_xlsb
+
 
 st.set_page_config(
     page_title="Simple Statistictools",
@@ -491,7 +494,7 @@ if option =="Heatmap":
 
 	st.title("Supersimple Heatmap")
 	st.info(
-		"Upload a Excel, choose two categorical variables and one numeric variable and  explore the differences between the mean values of the category combinations")
+		"Upload an Excel-File, choose two categorical variables and one numeric variable and  explore the differences between the mean values of the category combinations")
 
 	# Load Excel file
 	uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx", "xls"])
@@ -533,10 +536,39 @@ if option =="Heatmap":
 		st.info("Table with mean values in the cells")
 		st.dataframe(crosstab)
 
+		if len(crosstab)>1:
+			def to_excel(crosstab):
+				output = BytesIO()
+				writer = pd.ExcelWriter(output, engine='xlsxwriter')
+				crosstab.to_excel(writer, index=True, sheet_name='Sheet1')
+				workbook = writer.book
+				worksheet = writer.sheets['Sheet1']
+				format1 = workbook.add_format({'num_format': '0.00'})
+				worksheet.set_column('A:A', None, format1)
+				writer.close()
+				processed_data = output.getvalue()
+				return processed_data
+
+
+			df_xlsx = to_excel(crosstab)
+			st.download_button(label='📥 Download Crosstab as Excel?',
+							   data=df_xlsx,
+							   file_name='CrossTab' + '.xlsx')
+
+
+
+
+
+
+
+
+
+
 		# Display heatmap using matplotlib and seaborn
 		st.write("")
 		st.subheader("Heatmap")
-		st.info("with mean values for " + numeric_var)
+		st.write("Mean values for ")
+		st.info(numeric_var)
 
 		farbwahl = st.selectbox("Colorscheme", ("brg", "viridis", 'flag', 'prism', 'ocean', 'gist_earth', 'terrain',
 												'gist_stern', 'gnuplot', 'gnuplot2', 'CMRmap',
@@ -554,6 +586,10 @@ if option =="Heatmap":
 		grouped_var1 = df.groupby(categorical_var1)
 		mean_values_var1 = grouped_var1[numeric_var].mean()
 		count_var1 = grouped_var1[numeric_var].count()
+
+
+
+
 
 		fig, ax1 = plt.subplots(figsize=(10, 6))
 		ax2 = ax1.twinx()
@@ -632,6 +668,8 @@ if option =="Heatmap":
 		st.write("Anova of " + categorical_var1)
 		categories = df_clean[categorical_var1].unique()
 		data_by_category = [df_clean[numeric_var][df_clean[categorical_var1] == category] for category in categories]
+
+		#st.write("data_by_category: ",data_by_category)
 
 		f_statistic, p_value = f_oneway(*data_by_category)
 
