@@ -1,4 +1,13 @@
+
+#2024.03.03 Streumasse hinzugefügt
+
 import streamlit as st
+
+#Streumasse
+#für konfiidenzintervalle
+from scipy import stats
+
+
 
 #Z-TEST
 import pandas as pd
@@ -11,6 +20,9 @@ from statsmodels.stats.proportion import proportions_ztest, proportion_confint
 
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
+
+
+
 #Anova
 from scipy.stats import f_oneway
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
@@ -20,6 +32,9 @@ import seaborn as sns
 from scipy.stats import f_oneway
 
 from streamlit_option_menu import option_menu
+
+
+
 
 # für Excel-Export-Funktionen
 from io import BytesIO
@@ -37,8 +52,8 @@ st.set_page_config(
 
 option = option_menu(
 	menu_title="Simple Statistics",
-	options=["Z-Test", "Anova","Heatmap"],
-	icons=["1-circle", "2-circle","3-circle"], #https://icons.getbootstrap.com/
+	options=["Dispersion","Z-Test", "Anova","Heatmap"],
+	icons=["Arrows expand vertical","1-circle", "2-circle","3-circle"], #https://icons.getbootstrap.com/
 	orientation="horizontal",
 )
 
@@ -69,6 +84,138 @@ div.stButton > button:active {
 
 
 
+########################### Streumasse / Dispersion ###############################################################################################################################################
+
+if option =="Dispersion":
+
+	st.set_option('deprecation.showPyplotGlobalUse', False)
+
+	st.title('Streumasse')
+	st.info(
+		"Lade eine Exceldatei hoch, die z.B. Befragungsdaten enthält. Die Variablen-Namen müssen in der ersten Zeile stehen, die Daten zu den Variablen in den Zeilen. Wähle nach dem Upload die numerischen Variablen von Interesse aus und erhalte eine einfache Zusammenfassung der bekanntesten statistischen Streumasse.")
+
+	# Datei hochladen
+	uploaded_file = st.file_uploader("Datei hochladen (Excel)", type=["xlsx", "xls"])
+
+	if uploaded_file is not None:
+		# Daten einlesen
+		data = pd.read_excel(uploaded_file)
+
+		# Nur numerische Spalten auswählen
+		numerical_columns = data.select_dtypes(include=[np.number]).columns.tolist()
+
+		# Auswahl der Variablen
+		selected_columns = st.multiselect('Wähle numerische Variablen aus', numerical_columns)
+
+		if selected_columns:
+			# zuerst einfache, schnelle übersichtstabelle
+			st.write(data[selected_columns].describe())
+
+			# Statistische Kennzahlen und Konfidenzintervalle berechnen
+			statistics = {}
+			for column in selected_columns:
+				values = data[column]
+				mean = values.mean()
+				median = values.median()
+				variance = values.var()
+				std_dev = values.std()
+				sem = stats.sem(values)
+				ci_low, ci_high = stats.t.interval(0.95, len(values) - 1, loc=mean, scale=sem)
+
+				statistics[column] = {
+					'Min': values.min(),
+					'Max': values.max(),
+					'Spannweite': values.max() - values.min(),
+					'Mittelwert': mean,
+					'Median': median,
+					'Varianz': variance,
+					'Standardabweichung': std_dev,
+					'Stichprobenfehler (ddof=1)': sem,
+					'CI (95%)': f'[{ci_low:.2f}, {ci_high:.2f}]'
+				}
+
+			# Ergebnisse je Variable anzeigen
+			# st.subheader('Statistische Kennzahlen:')
+			# for column, values in statistics.items():
+			#    st.write(f'**{column}**:')
+			#    st.write(values)
+
+			# Zusammenfassung in Tabelle anzeigen
+			summary_df = pd.DataFrame(statistics).T
+			st.subheader('Zusammenfassung:')
+			st.write(summary_df)
+
+			streuungScharts = st.button("Streu-Charts anzeigen")
+			if streuungScharts:
+				# Verteilung plotten
+				st.subheader('Verteilung der Variablen:')
+				for column in selected_columns:
+					plt.figure(figsize=(8, 6))
+					sns.histplot(data[column], kde=True)
+					plt.title(f'Distribution of {column}')
+					plt.xlabel(column)
+					plt.ylabel('Frequency')
+					st.pyplot()
+
+			# Button für Beschreibungen
+			if st.button('Erklärungen anzeigen'):
+				st.subheader('Erklärungen:')
+				st.write(
+					'**Median:** Der Median ist der mittlere Wert einer sortierten Datenreihe. Wenn die Daten in aufsteigender Reihenfolge sortiert sind, ist der Median der Wert in der Mitte.')
+				st.write(
+					'**Varianz:** Die Varianz ist ein Maß für die Streuung der Datenpunkte um den Mittelwert. Eine hohe Varianz deutet auf eine große Streuung hin, während eine niedrige Varianz auf eine geringere Streuung hinweist.')
+				st.write(
+					'**Standardabweichung:** Die Standardabweichung ist die Quadratwurzel der Varianz. Sie gibt an, wie weit die einzelnen Datenpunkte im Durchschnitt vom Mittelwert entfernt sind.')
+				st.write(
+					'**Stichprobenfehler:** Der Stichprobenfehler ist ein Maß für die Unsicherheit der Schätzung des Mittelwerts in einer Stichprobe im Vergleich zur Gesamtmenge. Er wird kleiner, wenn die Stichprobe größer ist.')
+				st.write(
+					'**CI (95%):** Das Konfidenzintervall (CI) gibt an, in welchem Bereich wir mit 95%iger Sicherheit den wahren Parameter erwarten können. In diesem Fall bezieht es sich auf den Mittelwert.')
+
+			st.divider()
+
+			codeBuchExpander = st.expander('Ergebnistabelle nach Excel exportierten')
+			with codeBuchExpander:
+				# speicherZeitpunkt = pd.to_datetime('today')
+				st.write("")
+				if len(summary_df) > 0:
+					def to_excel(dfCodebuch):
+						output = BytesIO()
+						writer = pd.ExcelWriter(output, engine='xlsxwriter')
+						summary_df.to_excel(writer, index=True, sheet_name='Sheet1')
+						workbook = writer.book
+						worksheet = writer.sheets['Sheet1']
+						format1 = workbook.add_format({'num_format': '0.00'})
+						worksheet.set_column('A:A', None, format1)
+						writer.close()
+						processed_data = output.getvalue()
+						return processed_data
+
+
+					df_xlsx = to_excel(summary_df)
+					st.download_button(label='📥 Tabelle in Excel abspeichern?',
+									   data=df_xlsx,
+									   file_name='Streumasse' + '.xlsx')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+########################### Z-TEST ###############################################################################################################################################
 
 def perform_z_test(data, column1, column2, alpha=0.05):
     # Extracting counts of successes and failures
@@ -86,13 +233,6 @@ def perform_z_test(data, column1, column2, alpha=0.05):
 
     return z_stat, p_value, conf_interval1, conf_interval2
 
-
-
-
-
-
-
-########################### Z-TEST ###############################################################################################################################################
 if option =="Z-Test":
 	# Streamlit app
 	st.title("Proportions Z-Test App")
@@ -665,7 +805,7 @@ if option =="Heatmap":
 			st.write("")
 
 		st.subheader("")
-		st.write("Anova of " + categorical_var1)
+		st.subheader("Anova of " + categorical_var1)
 		categories = df_clean[categorical_var1].unique()
 		data_by_category = [df_clean[numeric_var][df_clean[categorical_var1] == category] for category in categories]
 
@@ -686,7 +826,7 @@ if option =="Heatmap":
 			st.warning("Unable to calculate F-statistic and p-value. Please drop missing values / check your data.")
 
 		st.subheader("")
-		st.write("Anova of " + categorical_var2)
+		st.subheader("Anova of " + categorical_var2)
 		categories = df_clean[categorical_var2].unique()
 		data_by_category = [df_clean[numeric_var][df_clean[categorical_var2] == category] for category in categories]
 
