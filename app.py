@@ -1,5 +1,6 @@
 
-#2024.03.03 Streumasse hinzugefügt
+#2024.03.03.05.15 Streumasse hinzugefügt
+#2024.03.03.05.24 Sample hinzugefügt
 
 import streamlit as st
 
@@ -34,11 +35,16 @@ from scipy.stats import f_oneway
 from streamlit_option_menu import option_menu
 
 
+#Für Sample
+import math
+from scipy.stats import norm
 
 
 # für Excel-Export-Funktionen
 from io import BytesIO
 from pyxlsb import open_workbook as open_xlsb
+
+
 
 
 st.set_page_config(
@@ -52,8 +58,8 @@ st.set_page_config(
 
 option = option_menu(
 	menu_title="Simple Statistics",
-	options=["Dispersion","Z-Test", "Anova","Heatmap"],
-	icons=["Arrows expand vertical","1-circle", "2-circle","3-circle"], #https://icons.getbootstrap.com/
+	options=["Dispersion","Z-Test", "Anova","Heatmap","Sample"],
+	icons=["arrows-expand-vertical","1-circle", "2-circle","3-circle","bounding-box"], #https://icons.getbootstrap.com/
 	orientation="horizontal",
 )
 
@@ -112,8 +118,14 @@ if option =="Dispersion":
 			st.write(data[selected_columns].describe())
 
 			# Statistische Kennzahlen und Konfidenzintervalle berechnen
+
 			statistics = {}
+
+
+
 			for column in selected_columns:
+
+
 				values = data[column]
 				mean = values.mean()
 				median = values.median()
@@ -121,6 +133,7 @@ if option =="Dispersion":
 				std_dev = values.std()
 				sem = stats.sem(values)
 				ci_low, ci_high = stats.t.interval(0.95, len(values) - 1, loc=mean, scale=sem)
+				varKoeff = std_dev / mean #thomas testet Variationskoeffizient..
 
 				statistics[column] = {
 					'Min': values.min(),
@@ -131,7 +144,8 @@ if option =="Dispersion":
 					'Varianz': variance,
 					'Standardabweichung': std_dev,
 					'Stichprobenfehler (ddof=1)': sem,
-					'CI (95%)': f'[{ci_low:.2f}, {ci_high:.2f}]'
+					'CI (95%)': f'[{ci_low:.2f}, {ci_high:.2f}]',
+					'Variationskoeffizient': varKoeff
 				}
 
 			# Ergebnisse je Variable anzeigen
@@ -170,6 +184,8 @@ if option =="Dispersion":
 					'**Stichprobenfehler:** Der Stichprobenfehler ist ein Maß für die Unsicherheit der Schätzung des Mittelwerts in einer Stichprobe im Vergleich zur Gesamtmenge. Er wird kleiner, wenn die Stichprobe größer ist.')
 				st.write(
 					'**CI (95%):** Das Konfidenzintervall (CI) gibt an, in welchem Bereich wir mit 95%iger Sicherheit den wahren Parameter erwarten können. In diesem Fall bezieht es sich auf den Mittelwert.')
+				st.write(
+					'**Der empirische Variationskoeffizient:** wird gebildet als Quotient aus empirischer Standardabweichung (ev ist hier aber nicht die empirische Standardabweichung verwendet worden)..und arithmetischem Mittel')
 
 			st.divider()
 
@@ -202,19 +218,6 @@ if option =="Dispersion":
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 ########################### Z-TEST ###############################################################################################################################################
 
 def perform_z_test(data, column1, column2, alpha=0.05):
@@ -234,7 +237,7 @@ def perform_z_test(data, column1, column2, alpha=0.05):
     return z_stat, p_value, conf_interval1, conf_interval2
 
 if option =="Z-Test":
-	# Streamlit app
+
 	st.title("Proportions Z-Test App")
 	st.subheader("Determine whether two population means are different")
 	st.info("Upload one or two Excelfiles, and explore if the values of two columns with metric values differ significantly")
@@ -923,3 +926,32 @@ if option =="Heatmap":
 				st.pyplot()
 
 
+
+################################### Sample Size #######################################
+if option =="Sample":
+	st.title('Vertrauensbereich von Stichproben')
+
+	population_size = st.number_input('Bevölkerungsgröße/Grundgesamtheit eingeben:', min_value=1, step=1, value=7000000)
+	sample_size = st.number_input('Stichprobenumfang - Anzahl Befragte:', min_value=1, step=1, value=500)
+	percentage = st.slider('Prozentsatz des Messwerts eingeben: (z.B. 30% Nein)', 0.0, 100.0, 50.0)
+	confidence_level = st.slider('Vertrauensniveau auswählen:', 0.1, 0.99, 0.95, 0.01)
+
+	percentageWert = percentage / 100
+
+	# st.write("percentageWert",percentageWert)
+
+	if st.button('Berechnen'):
+		standard_deviation = math.sqrt((percentageWert * (1 - percentageWert)) / sample_size)
+		# st.write("standard_deviation", standard_deviation)
+
+		margin_of_error = norm.ppf((1 + confidence_level) / 2) * (standard_deviation / math.sqrt(sample_size)) * 10
+		# st.write("margin_of_error", margin_of_error)
+
+		lower_bound = max(0, percentageWert - margin_of_error) * 100
+		# st.write("lower_bound", lower_bound)
+
+		upper_bound = min(100, percentageWert + margin_of_error) * 100
+		# st.write("upper_bound", upper_bound)
+
+		st.success(f'Der Vertrauensbereich beträgt {percentage}% +/- {round((upper_bound - lower_bound) / 2, 2)}%')
+		st.info(f'Untere Grenze: {round(lower_bound, 2)}%, Obere Grenze: {round(upper_bound, 2)}%')
