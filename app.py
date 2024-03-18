@@ -146,6 +146,7 @@ if option =="Dispersion":
 					'Spannweite': values.max() - values.min(),
 					'Mittelwert': mean,
 					'Median': median,
+					'Fälle': values.len(),
 					'Varianz': variance,
 					'Standardabweichung': std_dev,
 					'Stichprobenfehler (ddof=1)': sem,
