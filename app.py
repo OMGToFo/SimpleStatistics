@@ -144,7 +144,8 @@ if option =="Dispersion":
 					'Varianz': variance,
 					'Standardabweichung': std_dev,
 					'Stichprobenfehler (ddof=1)': sem,
-					'CI (95%)': f'[{ci_low:.2f}, {ci_high:.2f}]',
+					'CI_low (95%)': ci_low, 
+     					'CI_high (95%)': ci_high,
 					'Variationskoeffizient': varKoeff
 				}
 
