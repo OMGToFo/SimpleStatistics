@@ -146,6 +146,8 @@ if option =="Dispersion":
 					'Stichprobenfehler (ddof=1)': sem,
 					'CI_low (95%)': ci_low, 
      					'CI_high (95%)': ci_high,
+					'Mean_CI_low': mean - ci_low,
+					'Mean_CI_high': ci_high - mean,
 					'Variationskoeffizient': varKoeff
 				}
 
