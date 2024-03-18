@@ -128,9 +128,9 @@ if option =="Dispersion":
 				if missingsHandling == "Do nothing":
 					values = data[column]
 				if missingsHandling == "Drop missings":
-					values = data[column].dropna(inplace=True)  # Drop missing values within the loop
+					values = data[column].dropna()  # Drop missing values within the loop
 				if missingsHandling == "Replace with Zero":
-					values = data[column].fillna(0, inplace=True)
+					values = data[column].fillna(0)
 				
 				mean = values.mean()
 				median = values.median()
