@@ -96,9 +96,8 @@ if option =="Dispersion":
 
 	st.set_option('deprecation.showPyplotGlobalUse', False)
 
-	st.title('Streumasse')
-	st.info(
-		"Lade eine Exceldatei hoch, die z.B. Befragungsdaten enthält. Die Variablen-Namen müssen in der ersten Zeile stehen, die Daten zu den Variablen in den Zeilen. Wähle nach dem Upload die numerischen Variablen von Interesse aus und erhalte eine einfache Zusammenfassung der bekanntesten statistischen Streumasse.")
+	st.title('Scatter measures')
+	st.info("Upload an Excel file containing, for example, survey data. The variable names must be in the first row, with the data for the variables in the subsequent rows. After uploading, select the numerical variables of interest and obtain a simple summary of the most common statistical scatter measures.")
 
 	# Datei hochladen
 	uploaded_file = st.file_uploader("Datei hochladen (Excel)", type=["xlsx", "xls"])
