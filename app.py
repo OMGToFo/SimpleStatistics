@@ -113,9 +113,8 @@ if option =="Dispersion":
 		# Auswahl der Variablen
 		selected_columns = st.multiselect('Wähle numerische Variablen aus', numerical_columns)
 
-		if selected_columns:
-			# zuerst einfache, schnelle übersichtstabelle
-			st.write(data[selected_columns].describe())
+		if st.checkbox("Confirm selection"):
+
 
 			# Statistische Kennzahlen und Konfidenzintervalle berechnen
 
@@ -123,62 +122,107 @@ if option =="Dispersion":
 
 			missingsHandling = st.selectbox("Handling of missings?", ('Do nothing', 'Drop missings', 'Replace with Zero'))
 
-			for column in selected_columns:
+			if st.checkbox("Start calculations!"):
 
-				if missingsHandling == "Do nothing":
-					values = data[column]
-				if missingsHandling == "Drop missings":
-					values = data[column].dropna()  # Drop missing values within the loop
-				if missingsHandling == "Replace with Zero":
-					values = data[column].fillna(0)
-				
-				mean = values.mean()
-				median = values.median()
-				variance = values.var()
-				std_dev = values.std()
-				sem = stats.sem(values)
-				ci_low, ci_high = stats.t.interval(0.95, len(values) - 1, loc=mean, scale=sem)
-				varKoeff = std_dev / mean #thomas testet Variationskoeffizient..
+				# zuerst einfache, schnelle übersichtstabelle
+				st.write("Simple description of the selected variables:")
+				st.write(data[selected_columns].describe())
 
-				statistics[column] = {
-					'Min': values.min(),
-					'Max': values.max(),
-					'Spannweite': values.max() - values.min(),
-					'Mittelwert': mean,
-					'Median': median,
-					'Fälle': len(values),
-					'Varianz': variance,
-					'Standardabweichung': std_dev,
-					'Stichprobenfehler (ddof=1)': sem,
-					'CI_low (95%)': ci_low, 
-     					'CI_high (95%)': ci_high,
-					'Mean_CI_low': mean - ci_low,
-					'Mean_CI_high': ci_high - mean,
-					'Variationskoeffizient': varKoeff
-				}
-
-			# Ergebnisse je Variable anzeigen
-			# st.subheader('Statistische Kennzahlen:')
-			# for column, values in statistics.items():
-			#    st.write(f'**{column}**:')
-			#    st.write(values)
-
-			# Zusammenfassung in Tabelle anzeigen
-			summary_df = pd.DataFrame(statistics).T
-			st.subheader('Zusammenfassung:')
-			st.write(summary_df)
-
-			streuungScharts = st.button("Streu-Charts anzeigen")
-			if streuungScharts:
-				# Verteilung plotten
-				st.subheader('Verteilung der Variablen:')
 				for column in selected_columns:
-					plt.figure(figsize=(8, 6))
-					sns.histplot(data[column], kde=True)
-					plt.title(f'Distribution of {column}')
-					plt.xlabel(column)
-					plt.ylabel('Frequency')
-					st.pyplot()
+
+					if missingsHandling == "Do nothing":
+						values = data[column]
+					if missingsHandling == "Drop missings":
+						values = data[column].dropna()  # Drop missing values within the loop
+					if missingsHandling == "Replace with Zero":
+						values = data[column].fillna(0)
+					
+					mean = values.mean()
+					median = values.median()
+					variance = values.var()
+					std_dev = values.std()
+					sem = stats.sem(values)
+					ci_low, ci_high = stats.t.interval(0.95, len(values) - 1, loc=mean, scale=sem)
+					varKoeff = std_dev / mean #thomas testet Variationskoeffizient..
+
+					statistics[column] = {
+						'Min': values.min(),
+						'Max': values.max(),
+						'Spannweite': values.max() - values.min(),
+						'Mittelwert': mean,
+						'Median': median,
+						'Fälle': len(values),
+						'Varianz': variance,
+						'Standardabweichung': std_dev,
+						'Stichprobenfehler (ddof=1)': sem,
+						'CI_low (95%)': ci_low, 
+							'CI_high (95%)': ci_high,
+						'Mean_CI_low': mean - ci_low,
+						'Mean_CI_high': ci_high - mean,
+						'Variationskoeffizient': varKoeff
+					}
+
+				# Ergebnisse je Variable anzeigen
+				# st.subheader('Statistische Kennzahlen:')
+				# for column, values in statistics.items():
+				#    st.write(f'**{column}**:')
+				#    st.write(values)
+
+				# Zusammenfassung in Tabelle anzeigen
+				summary_df = pd.DataFrame(statistics).T
+				st.subheader('Ergebnistabelle:')
+				st.write(summary_df)
+
+
+				codeBuchExpander = st.expander('Ergebnistabelle nach Excel exportierten')
+				with codeBuchExpander:
+					# speicherZeitpunkt = pd.to_datetime('today')
+					st.write("")
+					if len(summary_df) > 0:
+						def to_excel(dfCodebuch):
+							output = BytesIO()
+							writer = pd.ExcelWriter(output, engine='xlsxwriter')
+							summary_df.to_excel(writer, index=True, sheet_name='Sheet1')
+							workbook = writer.book
+							worksheet = writer.sheets['Sheet1']
+							format1 = workbook.add_format({'num_format': '0.00'})
+							worksheet.set_column('A:A', None, format1)
+							writer.close()
+							processed_data = output.getvalue()
+							return processed_data
+
+
+						df_xlsx = to_excel(summary_df)
+						st.download_button(label='📥 Tabelle in Excel abspeichern?',
+										data=df_xlsx,
+										file_name='Streumasse' + '.xlsx')
+
+
+
+
+
+				streuungScharts = st.button("Streu-Charts anzeigen")
+				if streuungScharts:
+					# Verteilung plotten
+					st.subheader('Verteilung der Variablen:')
+					for column in selected_columns:
+						plt.figure(figsize=(8, 6))
+						sns.histplot(data[column], kde=True)
+						plt.title(f'Distribution of {column}')
+						plt.xlabel(column)
+						plt.ylabel('Frequency')
+						st.pyplot()
+
+
+				st.divider()
+
+
+
+
+
+
+
+
 
 			# Button für Beschreibungen
 			if st.button('Erklärungen anzeigen'):
@@ -196,30 +240,7 @@ if option =="Dispersion":
 				st.write(
 					'**Der empirische Variationskoeffizient:** wird gebildet als Quotient aus empirischer Standardabweichung (ev ist hier aber nicht die empirische Standardabweichung verwendet worden)..und arithmetischem Mittel')
 
-			st.divider()
 
-			codeBuchExpander = st.expander('Ergebnistabelle nach Excel exportierten')
-			with codeBuchExpander:
-				# speicherZeitpunkt = pd.to_datetime('today')
-				st.write("")
-				if len(summary_df) > 0:
-					def to_excel(dfCodebuch):
-						output = BytesIO()
-						writer = pd.ExcelWriter(output, engine='xlsxwriter')
-						summary_df.to_excel(writer, index=True, sheet_name='Sheet1')
-						workbook = writer.book
-						worksheet = writer.sheets['Sheet1']
-						format1 = workbook.add_format({'num_format': '0.00'})
-						worksheet.set_column('A:A', None, format1)
-						writer.close()
-						processed_data = output.getvalue()
-						return processed_data
-
-
-					df_xlsx = to_excel(summary_df)
-					st.download_button(label='📥 Tabelle in Excel abspeichern?',
-									   data=df_xlsx,
-									   file_name='Streumasse' + '.xlsx')
 
 
 
