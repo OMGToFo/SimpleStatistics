@@ -125,11 +125,11 @@ if option =="Dispersion":
 
 			for column in selected_columns:
 
-				if missingsHandling = "Do nothing":
+				if missingsHandling == "Do nothing":
 					values = data[column]
-				if missingsHandling = "Drop missings":
+				if missingsHandling == "Drop missings":
 					values = data[column].dropna()  # Drop missing values within the loop
-				if missingsHandling = "Drop missings":
+				if missingsHandling == "Drop missings":
 					values = data[column].fillna(0)
 				
 				mean = values.mean()
