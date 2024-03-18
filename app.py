@@ -126,7 +126,7 @@ if option =="Dispersion":
 			for column in selected_columns:
 
 
-				values = data[column]
+				values = data[column].dropna()  # Drop missing values within the loop
 				mean = values.mean()
 				median = values.median()
 				variance = values.var()
