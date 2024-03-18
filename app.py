@@ -121,12 +121,17 @@ if option =="Dispersion":
 
 			statistics = {}
 
-
+			missingsHandling = st.selectbox("Handling of missings?", ('Do nothing', 'Drop missings', 'Replace with Zero'))
 
 			for column in selected_columns:
 
-
-				values = data[column].dropna()  # Drop missing values within the loop
+				if missingsHandling = "Do nothing":
+					values = data[column]
+				if missingsHandling = "Drop missings":
+					values = data[column].dropna()  # Drop missing values within the loop
+				if missingsHandling = "Drop missings":
+					values = data[column].fillna(0)
+				
 				mean = values.mean()
 				median = values.median()
 				variance = values.var()
