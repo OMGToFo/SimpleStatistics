@@ -365,7 +365,7 @@ if option =="Z-Test":
 			st.write("Column1 - from Survey 1")
 			if st.checkbox("Replace Missing Values with 0"):
     				# Replace missing values with 0 in the specified column
-    				data1['column1'].fillna(0, inplace=True)
+    				data1[column1].fillna(0, inplace=True)
 			st.write(data1[column1])
 			# st.write(data1[column1].mean())
 			st.write(data1[column1].describe())
@@ -376,7 +376,7 @@ if option =="Z-Test":
 			st.write("Column2 - from Survey 2")
 			if st.checkbox("Replace Missing Values with 0 "):
     				# Replace missing values with 0 in the specified column
-    				data2['column2'].fillna(0, inplace=True)			
+    				data2[column2].fillna(0, inplace=True)			
 			st.write(data2[column2])
 			# st.write(data2[column2].mean())
 			st.write(data2[column2].describe())
