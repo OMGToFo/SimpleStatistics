@@ -1,4 +1,4 @@
-
+#2024.03.19.13 Welch's T-Test hinzugefügt
 #2024.03.03.05.15 Streumasse hinzugefügt
 #2024.03.03.05.24 Sample hinzugefügt
 
@@ -45,6 +45,8 @@ from io import BytesIO
 from pyxlsb import open_workbook as open_xlsb
 
 
+#Welch T-Test
+from scipy.stats import ttest_ind
 
 
 st.set_page_config(
@@ -58,8 +60,8 @@ st.set_page_config(
 
 option = option_menu(
 	menu_title="Simple Statistics",
-	options=["Dispersion","Z-Test", "Anova","Heatmap","Sample"],
-	icons=["arrows-expand-vertical","1-circle", "2-circle","3-circle","bounding-box"], #https://icons.getbootstrap.com/
+	options=["Dispersion","Z-Test", "Anova","Heatmap","Sample", "Welch T-Test"],
+	icons=["arrows-expand-vertical","1-circle", "2-circle","3-circle","bounding-box","arrow-left-right"], #https://icons.getbootstrap.com/
 	orientation="horizontal",
 )
 
@@ -267,9 +269,9 @@ def perform_z_test(data, column1, column2, alpha=0.05):
 
 if option =="Z-Test":
 
-	st.title("Proportions Z-Test App")
+	st.title("Proportions Z-Test")
 	st.subheader("Determine whether two population means are different")
-	st.info("Upload one or two Excelfiles, and explore if the values of two columns with metric values differ significantly")
+	st.info("Upload one or two Excelfiles, and explore if the values of two columns with metric values differ significantly. This method requires equal sample sizes, use Welsch T-Test if sample sizes differ")
 
 	zTestinfoExpander = st.expander("Info about Z-Tests")
 	with zTestinfoExpander:
@@ -437,6 +439,9 @@ if option =="Z-Test":
 			# perform two sample z-test
 			twoSampleZTest = ztest(data.column1, data.column2, value=0)
 
+			thomasTestetZtestNomal = z_stat, p_value = ztest(data.column1, data.column2)
+			st.write("thomasTestetZtestNomal:", thomasTestetZtestNomal)
+
 			thomasPValue = twoSampleZTest[1]
 			st.write("twoSampleZTest: ", twoSampleZTest)
 
@@ -447,9 +452,15 @@ if option =="Z-Test":
 
 			if thomasPValue < alpha:
 				st.success("The difference between the proportions is statistically significant.")
-			else:
+			if thomasPValue >= alpha:
 				st.warning("The difference between the proportions is not statistically significant.")
+			else:
+				st.warning("Significance was not calculated, you can try Welch's T-Test")
 
+
+	
+			
+			
 			resultscol1, resultscols2 = st.columns(2)
 
 			with resultscol1:
@@ -457,8 +468,10 @@ if option =="Z-Test":
 				m1 = data.column1.mean()
 				s1 = data.column1.std()
 				len1 = len(data1)
+				se1 = np.std(data.column1, ddof=1) / np.sqrt(len(data.column1)) #alternative berechnung mit berücksichtigung der Fallzahl
 				st.write("Mean1: ", m1)
 				st.write("Std 1: ", s1)
+				st.write("Std 1 - Alternativ: ", se1)
 				st.write("Cases 1:", len1)
 				dof1 = len(data.column1) - 1
 				confidence = 0.95
@@ -479,8 +492,10 @@ if option =="Z-Test":
 				m2 = data.column2.mean()
 				s2 = data.column2.std()
 				len2 = len(data2)
+				se2 = np.std(data.column2, ddof=1) / np.sqrt(len(data.column2)) #alternative berechnung mit berücksichtigung der Fallzahl
 				st.write("Mean2: ", m2)
 				st.write("Std 2: ", s2)
+				st.write("Std 2 - Alternativ: ", se2)
 				st.write("Cases 2:", len2)
 				dof2 = len(data.column2) - 1
 				confidence = 0.95
@@ -497,6 +512,22 @@ if option =="Z-Test":
 				st.pyplot(fig2)
 
 
+			ci1 = (confInterval1_left, confInterval1_right)
+			ci2 = (confInterval2_left, confInterval2_right)
+
+			# Plotting
+			fig3, ax3 = plt.subplots()
+			
+			# Plot means
+			ax3.bar([0.5, 1.5], [m1, m2], yerr=[[m1 - ci1[0], ci1[1] - m1], [m1 - ci2[0], ci2[1] - m2]], capsize=10)
+			ax3.set_xticks([0.5, 1.5])
+			ax3.set_xticklabels(['Sample 1', 'Sample 2'])
+			ax3.set_ylabel('Mean Value')
+			ax3.set_title('Comparison of Sample Means with Confidence Intervals')
+			
+			# Show plot
+			st.pyplot(fig3)
+	
 
 
 
@@ -990,3 +1021,89 @@ if option =="Sample":
 
 		st.success(f'Der Vertrauensbereich beträgt {percentage}% +/- {round((upper_bound - lower_bound) / 2, 2)}%')
 		st.info(f'Untere Grenze: {round(lower_bound, 2)}%, Obere Grenze: {round(upper_bound, 2)}%')
+
+
+
+
+############################### Welch T-Test #############################################
+
+if option =="Welch T-Test":
+
+	st.title("Welch's T-Test for Survey Data Comparison")
+
+	with st.expander("Info about Welch's T-Test"):
+		st.markdown("""
+		
+		1. Assumptions:
+
+		The data in each sample are independent.
+		The populations from which the samples are drawn are normally distributed, or the sample sizes are large enough for the Central Limit Theorem to apply.
+		
+		2. Usefulness:
+
+		It's useful when the variances of the two populations being compared are unequal.
+		It's robust to unequal sample sizes.
+		
+		3. Advantages:
+
+		Robustness: Welch's t-test does not assume equal variances, making it robust when the assumption of equal variances is violated.
+		Accuracy: It provides accurate results even when sample sizes are unequal, maintaining Type I error rates close to the nominal level.
+		Flexibility: It can be applied to a wide range of scenarios where comparing the means of two independent samples is necessary.
+		
+		Comparison to other tests:
+
+		Student's t-test: Welch's t-test is more robust when the assumption of equal variances is violated or when sample sizes are unequal.
+			  
+		Z-test: Welch's t-test is preferred when dealing with small sample sizes (typically n < 30) or when the population standard deviations are unknown.
+			  
+		In summary, Welch's t-test offers a flexible and robust method for comparing means of two independent samples, especially when the assumptions of other tests like the Student's t-test are not met. It's a valuable tool in statistical analysis, particularly in situations where data variability and sample size discrepancies exist.
+						
+					
+					""")
+
+	# Upload files
+	uploaded_file1 = st.file_uploader("Upload first Excel file")
+	uploaded_file2 = st.file_uploader("Upload second Excel file")
+
+	if uploaded_file1 and uploaded_file2:
+		data1 = pd.read_excel(uploaded_file1)
+		data2 = pd.read_excel(uploaded_file2)
+
+		st.write("### First DataFrame")
+		st.write(data1.head())
+
+		st.write("### Second DataFrame")
+		st.write(data2.head())
+
+		# Select variables
+		numeric_variables1 = data1.select_dtypes(include='number').columns.tolist()
+		numeric_variables2 = data2.select_dtypes(include='number').columns.tolist()
+
+		selected_var1 = st.selectbox("Select variable from first DataFrame", numeric_variables1)
+		selected_var2 = st.selectbox("Select variable from second DataFrame", numeric_variables2)
+
+		st.write("")
+
+		if st.checkbox("Replace Missing Values with 0"):
+			# Replace missing values with 0 in the specified column
+			data1[selected_var1].fillna(0, inplace=True)
+			data2[selected_var2].fillna(0, inplace=True)
+
+		if st.button("Perform Welch's t-test"):
+			t_statistic, p_value = ttest_ind(data1[selected_var1], data2[selected_var2], equal_var=False)
+
+			st.write(f"Welch's t-test results:")
+			st.write(f"T-statistic: {t_statistic}")
+			st.write(f"P-value: {p_value}")
+
+			mean1 = data1[selected_var1].mean()
+			st.write("Mean 1: ",mean1)
+
+			mean2 = data2[selected_var2].mean()
+			st.write("Mean 2: ",mean2)
+
+			if p_value < 0.05:
+				st.success("The means of the selected variables are significantly different.")
+			else:
+				st.warning("The means of the selected variables are not significantly different.")
+
