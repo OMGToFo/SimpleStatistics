@@ -1,3 +1,4 @@
+#2024.03.20.12 Welch's T-Test 2 von Kategorien hinzugefügt
 #2024.03.19.13 Welch's T-Test hinzugefügt
 #2024.03.03.05.15 Streumasse hinzugefügt
 #2024.03.03.05.24 Sample hinzugefügt
@@ -45,8 +46,10 @@ from io import BytesIO
 from pyxlsb import open_workbook as open_xlsb
 
 
-#Welch T-Test
+#Welch T-Tests
 from scipy.stats import ttest_ind
+
+
 
 
 st.set_page_config(
@@ -60,8 +63,8 @@ st.set_page_config(
 
 option = option_menu(
 	menu_title="Simple Statistics",
-	options=["Dispersion","Z-Test", "Anova","Heatmap","Sample", "Welch T-Test"],
-	icons=["arrows-expand-vertical","1-circle", "2-circle","3-circle","bounding-box","arrow-left-right"], #https://icons.getbootstrap.com/
+	options=["Dispersion", "Anova","Heatmap","Sample", "Z-Test", "Welch T-Test 1", "Welch T-Test 2"],
+	icons=["0-square", "2-circle","3-circle","bounding-box","2-circle","arrow-left-right","arrow-down-up"], #https://icons.getbootstrap.com/
 	orientation="horizontal",
 )
 
@@ -249,285 +252,6 @@ if option =="Dispersion":
 
 
 
-########################### Z-TEST ###############################################################################################################################################
-
-def perform_z_test(data, column1, column2, alpha=0.05):
-    # Extracting counts of successes and failures
-    successes1 = int(data[column1].mean() * len(data))
-    successes2 = int(data[column2].mean() * len(data))
-    failures1 = len(data) - successes1
-    failures2 = len(data) - successes2
-
-    # Performing the z-test
-    z_stat, p_value = proportions_ztest([successes1, successes2], [len(data), len(data)], alternative='two-sided')
-
-    # Calculate confidence interval
-    conf_interval1 = proportion_confint(successes1, len(data), alpha=alpha, method='normal')
-    conf_interval2 = proportion_confint(successes2, len(data), alpha=alpha, method='normal')
-
-    return z_stat, p_value, conf_interval1, conf_interval2
-
-if option =="Z-Test":
-
-	st.title("Proportions Z-Test")
-	st.subheader("Determine whether two population means are different")
-	st.info("Upload one or two Excelfiles, and explore if the values of two columns with metric values differ significantly. This method requires equal sample sizes, use Welsch T-Test if sample sizes differ")
-
-	zTestinfoExpander = st.expander("Info about Z-Tests")
-	with zTestinfoExpander:
-		st.write("""
-	       A z-test is a statistical test used to determine whether two population means are different when the variances are known and the sample size is large.
-
-	    The test statistic is assumed to have a normal distribution, and nuisance parameters such as standard deviation should be known in order for an accurate z-test to be performed.
-
-	    KEY TAKEAWAYS
-	    - A z-test is a statistical test to determine whether two population means are different when the variances are known and the sample size is large.
-	    - A z-test is a hypothesis test in which the z-statistic follows a normal distribution. 
-	    - A z-statistic, or z-score, is a number representing the result from the z-test.
-	    - Z-tests are closely related to t-tests, but t-tests are best performed when an experiment has a small sample size.
-	    - Z-tests assume the standard deviation is known, while t-tests assume it is unknown.      
-
-	             """)
-
-	infoExpander = st.expander("Info about this app")
-	with infoExpander:
-		st.write("""
-	    The functionality of this Streamlit app is to conduct a two-sample z-test for proportions based on user-uploaded survey data in the form of an Excel file. The key features and the user flow are described below:
-
-	    Functionality:
-	    File Upload:
-
-	    Users can upload an Excel file containing survey data.
-	    The app assumes that each column in the Excel file represents responses from a different survey or group.
-	    Column Selection:
-
-	    Users can select two columns (surveys) from the uploaded data for comparison.
-	    Analysis:
-
-	    The app automatically calculates the proportions for each selected column.
-	    It performs a two-sample z-test for proportions, evaluating whether there is a significant difference between the proportions of the selected columns.
-	    Results Display:
-
-	    The app displays the calculated z-statistic, p-value, and confidence intervals for each selected column.
-	    It interprets the results, indicating whether the observed difference between proportions is statistically significant based on a predefined significance level (default is 0.05).
-	    User Considerations:
-	    Data Format:
-
-	    The app assumes that the uploaded data is in Excel format.
-	    Each column in the Excel file is considered a separate survey or group.
-	    Column Selection:
-
-	    Users need to choose two columns (surveys) for comparison.
-	    It's essential to understand the nature of the data in each column and ensure they are comparable.
-	    Interpretation:
-
-	    The results include a z-statistic, p-value, and confidence intervals.
-	    Users should interpret the p-value in the context of their chosen significance level (e.g., 0.05). A p-value below this level suggests a significant difference.
-	    Assumptions:
-
-	    The app assumes that the underlying data follows a binomial distribution, which is appropriate for proportions.
-	    Expected Proportions:
-
-	    The app calculates proportions automatically, removing the need for users to input expected proportions. This can be beneficial if users are unsure about the expected proportions.
-	    Statistical Significance:
-
-	    Users should be cautious in interpreting statistical significance. A non-significant result doesn't necessarily mean that the proportions are equal; it suggests that there isn't enough evidence to claim a significant difference.
-	    Sample Size:
-
-	    Larger sample sizes generally provide more reliable results. Users should consider the sample sizes of their surveys when interpreting the outcomes.
-	    Data Quality:
-
-	    Users should review their data for outliers, missing values, or other factors that might impact the reliability of statistical tests.
-	    Feedback:
-
-	    Users should carefully read the app's feedback on statistical significance and confidence intervals to make informed decisions based on their data.
-	    Educational Purpose:
-
-	    This app is designed for educational and exploratory purposes. It is not a substitute for a comprehensive statistical analysis tailored to specific research or business needs.
-	    Users are encouraged to be familiar with statistical concepts, especially hypothesis testing and confidence intervals, to effectively interpret the results generated by the app. Additionally, consulting with a statistician or data analyst may be beneficial for more complex analyses or interpretations.       
-
-
-
-
-
-	            """)
-
-	############## Variables ##################
-
-	data = pd.DataFrame()
-	# st.write(data)
-
-	# Upload Excel file
-	uploaded_file1 = st.file_uploader("Upload an Excel file from Survey 1", type=["xlsx", "xls"])
-
-	if uploaded_file1 is not None:
-		# Read data from Excel file
-		data1 = pd.read_excel(uploaded_file1)
-		infoData1Expander = st.expander("Survey 1 - Dataset:")
-
-		with infoData1Expander:
-			st.write(data1.describe())
-			st.dataframe(data1)
-
-		# Choose numeric columns for the two surveys
-		numeric_columns1 = data1.select_dtypes(exclude='object').columns
-		st.sidebar.subheader("Column Selection - Survey 1")
-		column1 = st.sidebar.selectbox("Select column for Survey 1:", numeric_columns1)
-
-	uploaded_file2 = st.file_uploader("Upload an Excel file from Survey 2", type=["xlsx", "xls"])
-
-	if uploaded_file2 is not None:
-		# Read data from Excel file
-		data2 = pd.read_excel(uploaded_file2)
-		infoData2Expander = st.expander("Survey 2 - Dataset:")
-		with infoData2Expander:
-			st.write(data2.describe())
-			st.dataframe(data2)
-
-		# Choose columns for the two surveys
-		st.sidebar.divider()
-		st.sidebar.subheader("")
-		st.sidebar.subheader("Column Selection - Survey 2")
-		numeric_columns2 = data2.select_dtypes(exclude='object').columns
-		column2 = st.sidebar.selectbox("Select column for Survey 2:", numeric_columns2)
-
-		dataColumns1, dataColumns2 = st.columns(2)
-		with dataColumns1:
-			st.write("Column1 - from Survey 1")
-			if st.checkbox("Replace Missing Values with 0"):
-    				# Replace missing values with 0 in the specified column
-    				data1[column1].fillna(0, inplace=True)
-			st.write(data1[column1])
-			# st.write(data1[column1].mean())
-			st.write(data1[column1].describe())
-		# successes1 = int(data1[column1].mean() * len(data1))
-		# st.write("successes: ",successes1)
-
-		with dataColumns2:
-			st.write("Column2 - from Survey 2")
-			if st.checkbox("Replace Missing Values with 0 "):
-    				# Replace missing values with 0 in the specified column
-    				data2[column2].fillna(0, inplace=True)			
-			st.write(data2[column2])
-			# st.write(data2[column2].mean())
-			st.write(data2[column2].describe())
-		# successes2 = int(data2[column2].mean() * len(data2))
-		# st.write("successes: ",successes2)
-
-		data = pd.DataFrame({
-			'column1': data1[column1],
-			'column2': data2[column2]
-		})
-
-		# st.write("Chosen Variables")
-		# st.dataframe(data)
-
-		# st.write(data['column1'].mean())
-
-		st.subheader("")
-		st.sidebar.subheader("")
-		st.sidebar.subheader("")
-		startZTest = st.sidebar.button("Start Z-Test!")
-
-		if startZTest:
-
-			from statsmodels.stats.weightstats import ztest as ztest
-
-			st.divider()
-			st.write("")
-			st.subheader("Results:")
-			# perform two sample z-test
-			twoSampleZTest = ztest(data.column1, data.column2, value=0)
-
-			thomasTestetZtestNomal = z_stat, p_value = ztest(data.column1, data.column2)
-			st.write("thomasTestetZtestNomal:", thomasTestetZtestNomal)
-
-			thomasPValue = twoSampleZTest[1]
-			st.write("twoSampleZTest: ", twoSampleZTest)
-
-			st.metric(label="P-Value", value=thomasPValue.round(2))
-
-			# Interpretation
-			alpha = 0.05
-
-			if thomasPValue < alpha:
-				st.success("The difference between the proportions is statistically significant.")
-			if thomasPValue >= alpha:
-				st.warning("The difference between the proportions is not statistically significant.")
-			else:
-				st.warning("Significance was not calculated, you can try Welch's T-Test")
-
-
-	
-			
-			
-			resultscol1, resultscols2 = st.columns(2)
-
-			with resultscol1:
-				st.write("Survey 1")
-				m1 = data.column1.mean()
-				s1 = data.column1.std()
-				len1 = len(data1)
-				se1 = np.std(data.column1, ddof=1) / np.sqrt(len(data.column1)) #alternative berechnung mit berücksichtigung der Fallzahl
-				st.write("Mean1: ", m1)
-				st.write("Std 1: ", s1)
-				st.write("Std 1 - Alternativ: ", se1)
-				st.write("Cases 1:", len1)
-				dof1 = len(data.column1) - 1
-				confidence = 0.95
-				t_crit = np.abs(t.ppf((1 - confidence) / 2, dof1))
-				confInterval1_left = (m1 - s1 * t_crit / np.sqrt(len1))
-				confInterval1_right = (m1 + s1 * t_crit / np.sqrt(len1))
-				st.write("Confidence Interval 1 left:", confInterval1_left)
-				st.write("Confidence Interval 1 right:", confInterval1_right)
-				# arr = np.random.normal(1, 1, size=100)
-				arr1 = data.column1
-				fig1, ax1 = plt.subplots()
-				ax1.hist(arr1, bins=20)
-
-				st.pyplot(fig1)
-
-			with resultscols2:
-				st.write("Survey 2")
-				m2 = data.column2.mean()
-				s2 = data.column2.std()
-				len2 = len(data2)
-				se2 = np.std(data.column2, ddof=1) / np.sqrt(len(data.column2)) #alternative berechnung mit berücksichtigung der Fallzahl
-				st.write("Mean2: ", m2)
-				st.write("Std 2: ", s2)
-				st.write("Std 2 - Alternativ: ", se2)
-				st.write("Cases 2:", len2)
-				dof2 = len(data.column2) - 1
-				confidence = 0.95
-				t_crit = np.abs(t.ppf((1 - confidence) / 2, dof2))
-				confInterval2_left = (m2 - s2 * t_crit / np.sqrt(len2))
-				confInterval2_right = (m2 + s2 * t_crit / np.sqrt(len2))
-				st.write("Confidence Interval 2 left:", confInterval2_left)
-				st.write("Confidence Interval 2 right:", confInterval2_right)
-				# arr = np.random.normal(2, 2, size=200)
-				arr2 = data.column2
-				fig2, ax2 = plt.subplots()
-				ax2.hist(arr2, bins=20)
-
-				st.pyplot(fig2)
-
-
-			ci1 = (confInterval1_left, confInterval1_right)
-			ci2 = (confInterval2_left, confInterval2_right)
-
-			# Plotting
-			fig3, ax3 = plt.subplots()
-			
-			# Plot means
-			ax3.bar([0.5, 1.5], [m1, m2], yerr=[[m1 - ci1[0], ci1[1] - m1], [m1 - ci2[0], ci2[1] - m2]], capsize=10)
-			ax3.set_xticks([0.5, 1.5])
-			ax3.set_xticklabels(['Sample 1', 'Sample 2'])
-			ax3.set_ylabel('Mean Value')
-			ax3.set_title('Comparison of Sample Means with Confidence Intervals')
-			
-			# Show plot
-			st.pyplot(fig3)
-	
 
 
 
@@ -1025,11 +749,352 @@ if option =="Sample":
 
 
 
-############################### Welch T-Test #############################################
 
-if option =="Welch T-Test":
 
-	st.title("Welch's T-Test for Survey Data Comparison")
+
+########################### Z-TEST ###############################################################################################################################################
+
+def perform_z_test(data, column1, column2, alpha=0.05):
+    # Extracting counts of successes and failures
+    successes1 = int(data[column1].mean() * len(data))
+    successes2 = int(data[column2].mean() * len(data))
+    failures1 = len(data) - successes1
+    failures2 = len(data) - successes2
+
+    # Performing the z-test
+    z_stat, p_value = proportions_ztest([successes1, successes2], [len(data), len(data)], alternative='two-sided')
+
+    # Calculate confidence interval
+    conf_interval1 = proportion_confint(successes1, len(data), alpha=alpha, method='normal')
+    conf_interval2 = proportion_confint(successes2, len(data), alpha=alpha, method='normal')
+
+    return z_stat, p_value, conf_interval1, conf_interval2
+
+if option =="Z-Test":
+
+	st.title("Proportions Z-Test")
+	st.subheader("Determine whether two population means are different")
+	st.info("Upload one or two Excelfiles, and explore if the values of two columns with metric values differ significantly. This method requires equal sample sizes, use Welsch T-Test if sample sizes differ")
+
+	zTestinfoExpander = st.expander("Info about Z-Tests")
+	with zTestinfoExpander:
+		st.write("""
+	       A z-test is a statistical test used to determine whether two population means are different when the variances are known and the sample size is large.
+
+	    The test statistic is assumed to have a normal distribution, and nuisance parameters such as standard deviation should be known in order for an accurate z-test to be performed.
+
+	    KEY TAKEAWAYS
+	    - A z-test is a statistical test to determine whether two population means are different when the variances are known and the sample size is large.
+	    - A z-test is a hypothesis test in which the z-statistic follows a normal distribution. 
+	    - A z-statistic, or z-score, is a number representing the result from the z-test.
+	    - Z-tests are closely related to t-tests, but t-tests are best performed when an experiment has a small sample size.
+	    - Z-tests assume the standard deviation is known, while t-tests assume it is unknown.      
+
+	             """)
+
+	infoExpander = st.expander("Info about this app")
+	with infoExpander:
+		st.write("""
+	    The functionality of this Streamlit app is to conduct a two-sample z-test for proportions based on user-uploaded survey data in the form of an Excel file. The key features and the user flow are described below:
+
+	    Functionality:
+	    File Upload:
+
+	    Users can upload an Excel file containing survey data.
+	    The app assumes that each column in the Excel file represents responses from a different survey or group.
+	    Column Selection:
+
+	    Users can select two columns (surveys) from the uploaded data for comparison.
+	    Analysis:
+
+	    The app automatically calculates the proportions for each selected column.
+	    It performs a two-sample z-test for proportions, evaluating whether there is a significant difference between the proportions of the selected columns.
+	    Results Display:
+
+	    The app displays the calculated z-statistic, p-value, and confidence intervals for each selected column.
+	    It interprets the results, indicating whether the observed difference between proportions is statistically significant based on a predefined significance level (default is 0.05).
+	    User Considerations:
+	    Data Format:
+
+	    The app assumes that the uploaded data is in Excel format.
+	    Each column in the Excel file is considered a separate survey or group.
+	    Column Selection:
+
+	    Users need to choose two columns (surveys) for comparison.
+	    It's essential to understand the nature of the data in each column and ensure they are comparable.
+	    Interpretation:
+
+	    The results include a z-statistic, p-value, and confidence intervals.
+	    Users should interpret the p-value in the context of their chosen significance level (e.g., 0.05). A p-value below this level suggests a significant difference.
+	    Assumptions:
+
+	    The app assumes that the underlying data follows a binomial distribution, which is appropriate for proportions.
+	    Expected Proportions:
+
+	    The app calculates proportions automatically, removing the need for users to input expected proportions. This can be beneficial if users are unsure about the expected proportions.
+	    Statistical Significance:
+
+	    Users should be cautious in interpreting statistical significance. A non-significant result doesn't necessarily mean that the proportions are equal; it suggests that there isn't enough evidence to claim a significant difference.
+	    Sample Size:
+
+	    Larger sample sizes generally provide more reliable results. Users should consider the sample sizes of their surveys when interpreting the outcomes.
+	    Data Quality:
+
+	    Users should review their data for outliers, missing values, or other factors that might impact the reliability of statistical tests.
+	    Feedback:
+
+	    Users should carefully read the app's feedback on statistical significance and confidence intervals to make informed decisions based on their data.
+	    Educational Purpose:
+
+	    This app is designed for educational and exploratory purposes. It is not a substitute for a comprehensive statistical analysis tailored to specific research or business needs.
+	    Users are encouraged to be familiar with statistical concepts, especially hypothesis testing and confidence intervals, to effectively interpret the results generated by the app. Additionally, consulting with a statistician or data analyst may be beneficial for more complex analyses or interpretations.       
+
+
+
+
+
+	            """)
+
+	############## Variables ##################
+
+	data = pd.DataFrame()
+	# st.write(data)
+
+	# Upload Excel file
+	uploaded_file1 = st.file_uploader("Upload an Excel file from Survey 1", type=["xlsx", "xls"])
+
+	if uploaded_file1 is not None:
+		# Read data from Excel file
+		data1 = pd.read_excel(uploaded_file1)
+		infoData1Expander = st.expander("Survey 1 - Dataset:")
+
+		with infoData1Expander:
+			st.write(data1.describe())
+			st.dataframe(data1)
+
+		# Choose numeric columns for the two surveys
+		numeric_columns1 = data1.select_dtypes(exclude='object').columns
+		st.sidebar.subheader("Column Selection - Survey 1")
+		column1 = st.sidebar.selectbox("Select column for Survey 1:", numeric_columns1)
+
+	uploaded_file2 = st.file_uploader("Upload an Excel file from Survey 2", type=["xlsx", "xls"])
+
+	if uploaded_file2 is not None:
+		# Read data from Excel file
+		data2 = pd.read_excel(uploaded_file2)
+		infoData2Expander = st.expander("Survey 2 - Dataset:")
+		with infoData2Expander:
+			st.write(data2.describe())
+			st.dataframe(data2)
+
+		# Choose columns for the two surveys
+		st.sidebar.divider()
+		st.sidebar.subheader("")
+		st.sidebar.subheader("Column Selection - Survey 2")
+		numeric_columns2 = data2.select_dtypes(exclude='object').columns
+		column2 = st.sidebar.selectbox("Select column for Survey 2:", numeric_columns2)
+
+		dataColumns1, dataColumns2 = st.columns(2)
+		with dataColumns1:
+			st.write("Column1 - from Survey 1")
+			if st.checkbox("Replace Missing Values with 0"):
+    				# Replace missing values with 0 in the specified column
+    				data1[column1].fillna(0, inplace=True)
+			st.write(data1[column1])
+			# st.write(data1[column1].mean())
+			st.write(data1[column1].describe())
+		# successes1 = int(data1[column1].mean() * len(data1))
+		# st.write("successes: ",successes1)
+
+		with dataColumns2:
+			st.write("Column2 - from Survey 2")
+			if st.checkbox("Replace Missing Values with 0 "):
+    				# Replace missing values with 0 in the specified column
+    				data2[column2].fillna(0, inplace=True)			
+			st.write(data2[column2])
+			# st.write(data2[column2].mean())
+			st.write(data2[column2].describe())
+		# successes2 = int(data2[column2].mean() * len(data2))
+		# st.write("successes: ",successes2)
+
+		data = pd.DataFrame({
+			'column1': data1[column1],
+			'column2': data2[column2]
+		})
+
+		# st.write("Chosen Variables")
+		# st.dataframe(data)
+
+		# st.write(data['column1'].mean())
+
+		st.subheader("")
+		st.sidebar.subheader("")
+		st.sidebar.subheader("")
+		startZTest = st.sidebar.button("Start Z-Test!")
+
+		if startZTest:
+
+			from statsmodels.stats.weightstats import ztest as ztest
+
+			st.divider()
+			st.write("")
+			st.subheader("Results:")
+			# perform two sample z-test
+			twoSampleZTest = ztest(data.column1, data.column2, value=0)
+
+			thomasTestetZtestNomal = z_stat, p_value = ztest(data.column1, data.column2)
+			st.write("thomasTestetZtestNomal:", thomasTestetZtestNomal)
+
+			thomasPValue = twoSampleZTest[1]
+			st.write("twoSampleZTest: ", twoSampleZTest)
+
+			st.metric(label="P-Value", value=thomasPValue.round(2))
+
+			# Interpretation
+			alpha = 0.05
+
+			if thomasPValue < alpha:
+				st.success("The difference between the proportions is statistically significant.")
+			if thomasPValue >= alpha:
+				st.warning("The difference between the proportions is not statistically significant.")
+			else:
+				st.warning("Significance was not calculated, you can try Welch's T-Test")
+
+
+	
+			
+			
+			resultscol1, resultscols2 = st.columns(2)
+
+			with resultscol1:
+				st.write("Survey 1")
+				m1 = data.column1.mean()
+				s1 = data.column1.std()
+				len1 = len(data1)
+				se1 = np.std(data.column1, ddof=1) / np.sqrt(len(data.column1)) #alternative berechnung mit berücksichtigung der Fallzahl
+				st.write("Mean1: ", m1)
+				st.write("Std 1: ", s1)
+				st.write("Std 1 - Alternativ: ", se1)
+				st.write("Cases 1:", len1)
+				dof1 = len(data.column1) - 1
+				confidence = 0.95
+				t_crit = np.abs(t.ppf((1 - confidence) / 2, dof1))
+				confInterval1_left = (m1 - s1 * t_crit / np.sqrt(len1))
+				confInterval1_right = (m1 + s1 * t_crit / np.sqrt(len1))
+				st.write("Confidence Interval 1 left:", confInterval1_left)
+				st.write("Confidence Interval 1 right:", confInterval1_right)
+				# arr = np.random.normal(1, 1, size=100)
+				arr1 = data.column1
+				fig1, ax1 = plt.subplots()
+				ax1.hist(arr1, bins=20)
+
+				st.pyplot(fig1)
+
+			with resultscols2:
+				st.write("Survey 2")
+				m2 = data.column2.mean()
+				s2 = data.column2.std()
+				len2 = len(data2)
+				se2 = np.std(data.column2, ddof=1) / np.sqrt(len(data.column2)) #alternative berechnung mit berücksichtigung der Fallzahl
+				st.write("Mean2: ", m2)
+				st.write("Std 2: ", s2)
+				st.write("Std 2 - Alternativ: ", se2)
+				st.write("Cases 2:", len2)
+				dof2 = len(data.column2) - 1
+				confidence = 0.95
+				t_crit = np.abs(t.ppf((1 - confidence) / 2, dof2))
+				confInterval2_left = (m2 - s2 * t_crit / np.sqrt(len2))
+				confInterval2_right = (m2 + s2 * t_crit / np.sqrt(len2))
+				st.write("Confidence Interval 2 left:", confInterval2_left)
+				st.write("Confidence Interval 2 right:", confInterval2_right)
+				# arr = np.random.normal(2, 2, size=200)
+				arr2 = data.column2
+				fig2, ax2 = plt.subplots()
+				ax2.hist(arr2, bins=20)
+
+				st.pyplot(fig2)
+
+
+			ci1 = (confInterval1_left, confInterval1_right)
+			ci2 = (confInterval2_left, confInterval2_right)
+
+			# Plotting
+			fig3, ax3 = plt.subplots()
+			
+			# Plot means
+			ax3.bar([0.5, 1.5], [m1, m2], yerr=[[m1 - ci1[0], ci1[1] - m1], [m1 - ci2[0], ci2[1] - m2]], capsize=10)
+			ax3.set_xticks([0.5, 1.5])
+			ax3.set_xticklabels(['Sample 1', 'Sample 2'])
+			ax3.set_ylabel('Mean Value')
+			ax3.set_title('Comparison of Sample Means with Confidence Intervals')
+			
+			# Show plot
+			st.pyplot(fig3)
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+############################### Welch T-Test 1 #############################################
+
+if option =="Welch T-Test 1":
+
+	st.title("Comparison of Sample means with Welch's T-Test")
+	st.info("Compare mean values of variables from two different samples. Also works if samples are of different size.")
 
 	with st.expander("Info about Welch's T-Test"):
 		st.markdown("""
@@ -1107,3 +1172,77 @@ if option =="Welch T-Test":
 			else:
 				st.warning("The means of the selected variables are not significantly different.")
 
+
+############################### Welch T-Test 2 #############################################
+
+if option =="Welch T-Test 2":
+	st.title("Comparison of Sample category means with Welch's T-Test")
+	st.info("Compare mean values of categorical variables from two different samples. Also works if samples are of different size.")
+
+	st.write("")
+
+	# Information about the app functionality
+
+	st.info("""
+		This app allows you to compare survey data from two different datasets. Here's how it works:
+
+		1. **Upload Data**: Upload two Excel files containing survey data.
+		2. **Column Selection**: Select columns containing non-numerical data (e.g., sex, age groups, language) from both datasets.
+		3. **Numerical Variable Selection**: Choose numerical variables that occur in both datasets.
+		4. **Comparison**: The app performs statistical tests (Welch's t-test) to compare the mean values of the selected numerical variables for each category defined by the non-numerical columns.
+		5. **Display Results**: View the results of the statistical tests in a table format, indicating the mean difference between the surveys and whether the difference is statistically significant.
+
+	""")
+
+	# File Upload
+	st.header("Upload Data")
+	uploaded_file1 = st.file_uploader("Upload first survey data (Excel file)", type="xlsx")
+	uploaded_file2 = st.file_uploader("Upload second survey data (Excel file)", type="xlsx")
+
+	if uploaded_file1 and uploaded_file2:
+		# Load Data
+		df1 = pd.read_excel(uploaded_file1)
+		df2 = pd.read_excel(uploaded_file2)
+		
+		# Column Selection
+		non_numerical_columns1 = st.multiselect("Select non-numerical columns from first survey", df1.columns)
+
+		#st.write(df1[non_numerical_columns1])
+
+		non_numerical_columns2 = st.multiselect("Select non-numerical columns from second survey", df2.columns)
+		
+		# Numerical Variable Selection
+		numerical_variables = st.multiselect("Select numerical variables common in both surveys", df1.columns.intersection(df2.columns))
+		
+		# Perform Comparison
+		st.write("")
+		if st.button("Compare!"):
+			comparisons = []
+			for variable in numerical_variables:
+				for column in non_numerical_columns1:
+					for value in df1[column].unique():
+						data1 = df1[df1[column] == value][variable]
+						data2 = df2[df2[column] == value][variable]
+						
+						if len(data1) > 0 and len(data2) > 0:
+							result = ttest_ind(data1, data2, equal_var=False)
+							st.write(f"Comparison for {variable} when {column} is {value}: p-value = {result.pvalue}")
+							mean_diff = data2.mean() - data1.mean()
+							significant = "Yes" if result.pvalue < 0.05 else "No"
+							comparisons.append({
+							"Variable": variable,
+							"Category": column,
+							"Value": value,
+							"Mean1" : data1.mean(),
+							"Mean2" : data2.mean(),
+							"Mean Difference": mean_diff,
+							"P-Value" : result.pvalue,
+							"Significant Difference": significant
+						})
+				# Display Results
+			if comparisons:
+				st.header("Comparison Results")
+				comparison_df = pd.DataFrame(comparisons)
+				st.write(comparison_df)
+			else:
+				st.write("No comparisons found.")
