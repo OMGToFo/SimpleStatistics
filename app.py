@@ -1,3 +1,4 @@
+#2024.04.22.11 Kleine Formalitäten Welch-t test2 + exceldownload
 #2024.03.20.12 Welch's T-Test 2 von Kategorien hinzugefügt
 #2024.03.19.13 Welch's T-Test hinzugefügt
 #2024.03.03.05.15 Streumasse hinzugefügt
@@ -1205,17 +1206,26 @@ if option =="Welch T-Test 2":
 		df2 = pd.read_excel(uploaded_file2)
 		
 		# Column Selection
-		non_numerical_columns1 = st.multiselect("Select non-numerical columns from first survey", df1.columns)
+		non_numerical_columns1 = st.multiselect("Select non-numerical columns, like categories (Men/Women) from first survey", df1.columns)
 
 		#st.write(df1[non_numerical_columns1])
 
-		non_numerical_columns2 = st.multiselect("Select non-numerical columns from second survey", df2.columns)
+		non_numerical_columns2 = st.multiselect("Select non-numerical columns, like categories (Men/Women) from second survey", df2.columns)
 		
 		# Numerical Variable Selection
 		numerical_variables = st.multiselect("Select numerical variables common in both surveys", df1.columns.intersection(df2.columns))
 		
+		casesColumns1, casesColumns2 = st.columns(2)
+
+		casesColumns1.info("Cases in first survey: " + str(len(df1)))
+		casesColumns2.info("Cases in second survey: " + str(len(df2)))
+
+
 		# Perform Comparison
 		st.write("")
+
+		#showComparedData = st.checkbox("Show compared data after analysis")
+
 		if st.button("Compare!"):
 			comparisons = []
 			for variable in numerical_variables:
@@ -1226,13 +1236,15 @@ if option =="Welch T-Test 2":
 						
 						if len(data1) > 0 and len(data2) > 0:
 							result = ttest_ind(data1, data2, equal_var=False)
-							st.write(f"Comparison for {variable} when {column} is {value}: p-value = {result.pvalue}")
+							#st.write(f"Comparison for {variable} when {column} is {value}: p-value = {result.pvalue}")
 							mean_diff = data2.mean() - data1.mean()
 							significant = "Yes" if result.pvalue < 0.05 else "No"
 							comparisons.append({
 							"Variable": variable,
 							"Category": column,
 							"Value": value,
+							"Cases1" : len(data1!=""),
+							"Cases2" : len(data2!=""),
 							"Mean1" : data1.mean(),
 							"Mean2" : data2.mean(),
 							"Mean Difference": mean_diff,
@@ -1240,9 +1252,41 @@ if option =="Welch T-Test 2":
 							"Significant Difference": significant
 						})
 				# Display Results
+			
+
+
 			if comparisons:
 				st.header("Comparison Results")
 				comparison_df = pd.DataFrame(comparisons)
 				st.write(comparison_df)
+
+				if len(comparison_df)>1:
+					def to_excel(comparison_df):
+						output = BytesIO()
+						writer = pd.ExcelWriter(output, engine='xlsxwriter')
+						comparison_df.to_excel(writer, index=True, sheet_name='Sheet1')
+						workbook = writer.book
+						worksheet = writer.sheets['Sheet1']
+						format1 = workbook.add_format({'num_format': '0.00'})
+						worksheet.set_column('A:A', None, format1)
+						writer.close()
+						processed_data = output.getvalue()
+						return processed_data
+
+				df_xlsx = to_excel(comparison_df)
+				st.download_button(label='📥 Download Table with Results as Excel?',
+								data=df_xlsx,
+								file_name='Results Welch T-Test' + '.xlsx')
+
 			else:
 				st.write("No comparisons found.")
+
+
+
+
+
+
+			#showDataColumns1, showDataColumns2 = st.columns(2)
+			#if showComparedData:
+			#	showDataColumns1.dataframe(data1)
+			#	showDataColumns2.dataframe(data2)
