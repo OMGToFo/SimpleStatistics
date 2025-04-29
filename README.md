@@ -1,3 +1,5 @@
-# Some simple Tools to explore statistical differences between variables and samples
+# Some basic Tools to explore statistical differences between variables and samples
+
+https://simplestatistics.streamlit.app/
 
       
