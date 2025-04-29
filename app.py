@@ -4,7 +4,7 @@
 #2024.03.03.05.15 Streumasse hinzugefügt
 #2024.03.03.05.24 Sample hinzugefügt
 #2024.04.22 kleine Fomralitäten
-#2025.04.29 versuch korr hinzufügen
+#2025.04.29 einfache korrelationsberechnung hinzugefügt
 
 import streamlit as st
 
