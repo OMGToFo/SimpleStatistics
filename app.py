@@ -3,6 +3,8 @@
 #2024.03.19.13 Welch's T-Test hinzugefügt
 #2024.03.03.05.15 Streumasse hinzugefügt
 #2024.03.03.05.24 Sample hinzugefügt
+#2024.04.22 kleine Fomralitäten
+#2025.04.29 versuch korr hinzufügen
 
 import streamlit as st
 
@@ -177,6 +179,8 @@ if option =="Dispersion":
 				summary_df = pd.DataFrame(statistics).T
 				st.subheader('Ergebnistabelle:')
 				st.write(summary_df)
+				st.subheader('Korrelationen:')
+				st.write(values.corr())
 
 
 				codeBuchExpander = st.expander('Ergebnistabelle nach Excel exportierten')
