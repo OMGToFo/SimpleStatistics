@@ -173,7 +173,7 @@ if option =="Dispersion":
 				# st.subheader('Statistische Kennzahlen:')
 				# for column, values in statistics.items():
 				#    st.write(f'**{column}**:')
-				#    st.write(values)
+				st.write(values)
 
 				# Zusammenfassung in Tabelle anzeigen
 				summary_df = pd.DataFrame(statistics).T
