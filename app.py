@@ -134,6 +134,8 @@ if option =="Dispersion":
 				# zuerst einfache, schnelle übersichtstabelle
 				st.write("Simple description of the selected variables:")
 				st.write(data[selected_columns].describe())
+				st.write("Correlations")
+				st.write(data[selected_columns].corr())
 
 				for column in selected_columns:
 
@@ -173,14 +175,13 @@ if option =="Dispersion":
 				# st.subheader('Statistische Kennzahlen:')
 				# for column, values in statistics.items():
 				#    st.write(f'**{column}**:')
-				st.write(values)
+				# st.write(statistics)
 
 				# Zusammenfassung in Tabelle anzeigen
 				summary_df = pd.DataFrame(statistics).T
 				st.subheader('Ergebnistabelle:')
 				st.write(summary_df)
-				st.subheader('Korrelationen:')
-				st.write(values.corr())
+
 
 
 				codeBuchExpander = st.expander('Ergebnistabelle nach Excel exportierten')
