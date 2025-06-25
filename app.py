@@ -5,7 +5,7 @@
 #2024.03.03.05.24 Sample hinzugefügt
 #2024.04.22 kleine Fomralitäten
 #2025.04.29 einfache korrelationsberechnung hinzugefügt
-#2025.06.256 added filtering by categories to welch's t-test1
+#2025.06.25 added filtering by categories to welch's t-test1
 import streamlit as st
 
 #Streumasse
@@ -1048,53 +1048,6 @@ if option =="Z-Test":
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ############################### Welch T-Test 1 #############################################
 
 if option =="Welch T-Test 1":
@@ -1162,22 +1115,22 @@ if option =="Welch T-Test 1":
 		st.info("Optional filtering by Category Variables:")
 
 	    # Filter for DataFrame 1
-	    cat_columns1 = data1.select_dtypes(include=['object', 'category']).columns.tolist()
-	    if cat_columns1:
-	        filter_col1 = st.selectbox("Filter first DataFrame by", ["None"] + cat_columns1, key="cat1")
-	        if filter_col1 != "None":
-	            filter_vals1 = data1[filter_col1].dropna().unique().tolist()
-	            selected_vals1 = st.multiselect(f"Select values in '{filter_col1}'", filter_vals1, default=filter_vals1)
-	            data1 = data1[data1[filter_col1].isin(selected_vals1)]
+		cat_columns1 = data1.select_dtypes(include=['object', 'category']).columns.tolist()
+		if cat_columns1:
+			filter_col1 = st.selectbox("Filter first DataFrame by", ["None"] + cat_columns1, key="cat1")
+			if filter_col1 != "None":
+				filter_vals1 = data1[filter_col1].dropna().unique().tolist()
+				selected_vals1 = st.multiselect(f"Select values in '{filter_col1}'", filter_vals1, default=filter_vals1)
+				data1 = data1[data1[filter_col1].isin(selected_vals1)]
 	
 	    # Filter for DataFrame 2
-	    cat_columns2 = data2.select_dtypes(include=['object', 'category']).columns.tolist()
-	    if cat_columns2:
-	        filter_col2 = st.selectbox("Filter second DataFrame by", ["None"] + cat_columns2, key="cat2")
-	        if filter_col2 != "None":
-	            filter_vals2 = data2[filter_col2].dropna().unique().tolist()
-	            selected_vals2 = st.multiselect(f"Select values in '{filter_col2}'", filter_vals2, default=filter_vals2)
-	            data2 = data2[data2[filter_col2].isin(selected_vals2)]
+		cat_columns2 = data2.select_dtypes(include=['object', 'category']).columns.tolist()
+		if cat_columns2:
+			filter_col2 = st.selectbox("Filter second DataFrame by", ["None"] + cat_columns2, key="cat2")
+			if filter_col2 != "None":
+				filter_vals2 = data2[filter_col2].dropna().unique().tolist()
+				selected_vals2 = st.multiselect(f"Select values in '{filter_col2}'", filter_vals2, default=filter_vals2)
+				data2 = data2[data2[filter_col2].isin(selected_vals2)]
 
 
 
